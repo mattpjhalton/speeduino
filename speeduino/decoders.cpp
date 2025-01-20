@@ -742,6 +742,28 @@ void triggerSec_missingTooth(void)
         //Next secondary filter is 25% the current gap, done here so we don't get a great big gap for the 1st tooth
         triggerSecFilterTime = curGap2 >> 2; 
         break;
+
+      case SEC_TRIGGER_PLUS_ONE:
+      // Designed for secondary decoders that have +1 extra teeth in the pattern. Doesn't matter how many teeth are in the decoder as long as its more than
+      // two equally spaced teeth (so would be written 2+1)
+        targetGap2 = (toothLastSecToothTime - toothLastMinusOneSecToothTime) >> 1; //If the time between the current tooth and the last is less than 50% we've got the extra tooth
+        toothLastMinusOneSecToothTime = toothLastSecToothTime;
+
+        if (curGap2 < targetGap2) 
+        {
+          // found the extra tooth
+          secondaryToothCount = 1;
+          revolutionOne = 1;
+          triggerSecFilterTime = 0; //This is used to prevent a condition where serious intermittent signals (Eg someone furiously plugging the sensor wire in and out) can leave the filter in an unrecoverable state
+          BIT_CLEAR(currentStatus.status3, BIT_STATUS3_HALFSYNC);  
+          triggerRecordVVT1Angle ();
+        }
+        else
+        {
+          triggerSecFilterTime = 0; //We don't know how many teeth are on the secondary or how close the +1 tooth is therefore can't use trigger filtering so set to 0
+          secondaryToothCount++;
+        }
+        break;
     }
     toothLastSecToothTime = curTime2;
   } //Trigger filter
