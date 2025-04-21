@@ -542,6 +542,10 @@ void triggerSetup_missingTooth(void)
   {
     triggerSecFilterTime = MICROS_PER_MIN / MAX_RPM / 4U / 2U;
   }
+  else if (configPage4.trigPatternSec == SEC_TRIGGER_MIATA)
+  {
+    triggerSecFilterTime = MICROS_PER_MIN / MAX_RPM / 18U / 2U; // divide by 18U as 20 degree between the 2 teeth
+  }
   else 
   {
     triggerSecFilterTime = (MICROS_PER_SEC / (MAX_RPM / 60U));
@@ -743,26 +747,27 @@ void triggerSec_missingTooth(void)
         triggerSecFilterTime = curGap2 >> 2; 
         break;
 
-      case SEC_TRIGGER_PLUS_ONE:
+      case SEC_TRIGGER_MIATA:
       // Designed for secondary decoders that have +1 extra teeth in the pattern. Doesn't matter how many teeth are in the decoder as long as its more than
       // two equally spaced teeth (so would be written 2+1)
-        targetGap2 = (toothLastSecToothTime - toothLastMinusOneSecToothTime) >> 1; //If the time between the current tooth and the last is less than 50% we've got the extra tooth
+        targetGap2 = (toothLastSecToothTime - toothLastMinusOneSecToothTime) << 4; //If the time between the current tooth and the last is greater than 2000% we've got the first tooth
         toothLastMinusOneSecToothTime = toothLastSecToothTime;
-
-        if (curGap2 < targetGap2) 
+        if ( (curGap2 >= targetGap2) || (secondaryToothCount > 2) )
         {
-          // found the extra tooth
-          secondaryToothCount = 1;
-          revolutionOne = 1;
+          secondaryToothCount = 0;
+          revolutionOne = 1; //Sequential revolution reset
           triggerSecFilterTime = 0; //This is used to prevent a condition where serious intermittent signals (Eg someone furiously plugging the sensor wire in and out) can leave the filter in an unrecoverable state
-          BIT_CLEAR(currentStatus.status3, BIT_STATUS3_HALFSYNC);  
-          triggerRecordVVT1Angle ();
+          triggerRecordVVT1Angle();
+        }
+        else if (secondaryToothCount == 1)
+        {
+          triggerSecFilterTime = curGap2 >> 4; // 170 deg gap down to 20. Take next bit for computational efficiency
         }
         else
         {
-          triggerSecFilterTime = 0; //We don't know how many teeth are on the secondary or how close the +1 tooth is therefore can't use trigger filtering so set to 0
-          secondaryToothCount++;
+          triggerSecFilterTime = curGap2 << 3; //previous gap was 20 deg, next is 170. Multiply by 8 to get the nearest
         }
+        secondaryToothCount++;
         break;
     }
     toothLastSecToothTime = curTime2;
