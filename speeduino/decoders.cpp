@@ -750,7 +750,7 @@ void triggerSec_missingTooth(void)
       case SEC_TRIGGER_MIATA:
       // Designed for secondary decoders that have +1 extra teeth in the pattern. Doesn't matter how many teeth are in the decoder as long as its more than
       // two equally spaced teeth (so would be written 2+1)
-        targetGap2 = (toothLastSecToothTime - toothLastMinusOneSecToothTime) << 4; //If the time between the current tooth and the last is greater than 2000% we've got the first tooth
+        targetGap2 = (toothLastSecToothTime - toothLastMinusOneSecToothTime) << 2; //If the time between the current tooth and the last is greater than 400% we've got the first tooth
         toothLastMinusOneSecToothTime = toothLastSecToothTime;
         if ( (curGap2 >= targetGap2) || (secondaryToothCount > 2) )
         {
@@ -759,13 +759,13 @@ void triggerSec_missingTooth(void)
           triggerSecFilterTime = 0; //This is used to prevent a condition where serious intermittent signals (Eg someone furiously plugging the sensor wire in and out) can leave the filter in an unrecoverable state
           triggerRecordVVT1Angle();
         }
-        else if (secondaryToothCount == 1)
+        else if (secondaryToothCount == 2) // Doing this at explicit tooth to reduce risk of missing tooth 1
         {
-          triggerSecFilterTime = curGap2 >> 4; // 170 deg gap down to 20. Take next bit for computational efficiency
+          triggerSecFilterTime = curGap2 << 2; //previous gap was 20 deg, next is 170. Multiply by 4 to get the nearest, conservation to not miss tooth 1
         }
         else
         {
-          triggerSecFilterTime = curGap2 << 3; //previous gap was 20 deg, next is 170. Multiply by 8 to get the nearest
+          triggerSecFilterTime = curGap2 >> 4; // 170 deg gap down to 20. reduce by 16 to avoid noise
         }
         secondaryToothCount++;
         break;
