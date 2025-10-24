@@ -11,10 +11,8 @@
   void doSystemReset();
   void jumpToBootloader();
   time_t getTeensy3Time();
-  #define PORT_TYPE uint8_t //Size of the port variables
-  #define PINMASK_TYPE uint8_t
+  uint8_t getSystemTemp();
   #define COMPARE_TYPE uint16_t
-  #define COUNTER_TYPE uint16_t
   #define SERIAL_BUFFER_SIZE 517 //Size of the serial buffer used by new comms protocol. For SD transfers this must be at least 512 + 1 (flag) + 4 (sector)
   #define FPU_MAX_SIZE 32 //Size of the FPU buffer. 0 means no FPU.
   #define SD_LOGGING //SD logging enabled by default for Teensy 3.5 as it has the slot built in
@@ -32,7 +30,6 @@
   #define RTC_LIB_H "TimeLib.h"
   #define SD_CONFIG  SdioConfig(FIFO_SDIO) //Set Teensy to use SDIO in FIFO mode. This is the fastest SD mode on Teensy as it offloads most of the writes
 
-  #define micros_safe() micros() //timer5 method is not used on anything but AVR, the micros_safe() macro is simply an alias for the normal micros()
   #define PWM_FAN_AVAILABLE
   #define pinIsReserved(pin)  ( ((pin) == 0) || ((pin) == 1) || ((pin) == 3) || ((pin) == 4) ) //Forbidden pins like USB
 
@@ -156,8 +153,6 @@
 ***********************************************************************************************************
 * CAN / Second serial
 */
-  #define USE_SERIAL3               // Secondary serial port to use
-  #define secondarySerial_AVAILABLE
   #define SECONDARY_SERIAL_T HardwareSerial
 
   #include <FlexCAN_T4.h>
