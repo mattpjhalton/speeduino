@@ -32,13 +32,9 @@
 ***********************************************************************************************************
 * General
 */
-#define PORT_TYPE uint32_t
-#define PINMASK_TYPE uint32_t
 #define COMPARE_TYPE uint16_t
-#define COUNTER_TYPE uint16_t
 #define SERIAL_BUFFER_SIZE 517 //Size of the serial buffer used by new comms protocol. For SD transfers this must be at least 512 + 1 (flag) + 4 (sector)
 #define FPU_MAX_SIZE 32 //Size of the FPU buffer. 0 means no FPU.
-#define micros_safe() micros() //timer5 method is not used on anything but AVR, the micros_safe() macro is simply an alias for the normal micros()
 #define TIMER_RESOLUTION 4
 
 //Select one for EEPROM,the default is EEPROM emulation on internal flash.
@@ -96,7 +92,6 @@ inline uint32_t  digitalPinToInterrupt(uint32_t Interrupt_pin) { return Interrup
   //Alternatively same SPI bus can be used as there is for SPI flash. But this is not recommended due to slower speed and other possible problems.
   //#define SD_CONFIG SdSpiConfig(SD_CS_PIN, SHARED_SPI, SD_SCK_MHZ(50), &SPI_for_flash)
 #endif
-#define USE_SERIAL3
 
 //When building for Black board Serial1 is instantiated,building generic STM32F4x7 has serial2 and serial 1 must be done here
 #if SERIAL_UART_INSTANCE==2
@@ -109,6 +104,7 @@ void initBoard();
 uint16_t freeRam();
 void doSystemReset();
 void jumpToBootloader();
+uint8_t getSystemTemp();
 
 #if defined(ARDUINO_BLUEPILL_F103C8) || defined(ARDUINO_BLUEPILL_F103CB) \
  || defined(ARDUINO_BLACKPILL_F401CC) || defined(ARDUINO_BLACKPILL_F411CE)
@@ -385,7 +381,6 @@ void ignitionSchedule8Interrupt(HardwareTimer*);
 extern STM32_CAN Can0;
 #endif
 
-#define secondarySerial_AVAILABLE
 #if defined(STM32GENERIC) // STM32GENERIC core
   #define SECONDARY_SERIAL_T SerialUART
 #else //libmaple core aka STM32DUINO

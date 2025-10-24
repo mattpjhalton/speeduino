@@ -13,11 +13,10 @@
   void jumpToBootloader();
   void setTeensy41PinsHysteresis();
   void teensy41_customSerialBegin();
+  bool pinIsSerial(uint8_t);
   time_t getTeensy3Time();
-  #define PORT_TYPE uint32_t //Size of the port variables
-  #define PINMASK_TYPE uint32_t
+  uint8_t getSystemTemp();
   #define COMPARE_TYPE uint16_t
-  #define COUNTER_TYPE uint16_t
   #define SERIAL_BUFFER_SIZE 517 //Size of the serial buffer used by new comms protocol. For SD transfers this must be at least 512 + 1 (flag) + 4 (sector)
   #define FPU_MAX_SIZE 32 //Size of the FPU buffer. 0 means no FPU.
   #define BOARD_MAX_DIGITAL_PINS 54
@@ -30,9 +29,8 @@
   #define RTC_LIB_H "TimeLib.h"
   #define SD_CONFIG  SdioConfig(FIFO_SDIO) //Set Teensy to use SDIO in FIFO mode. This is the fastest SD mode on Teensy as it offloads most of the writes
 
-  #define micros_safe() micros() //timer5 method is not used on anything but AVR, the micros_safe() macro is simply an alias for the normal micros()
   //#define PWM_FAN_AVAILABLE
-  #define pinIsReserved(pin)  ( ((pin) == 0) || ((pin) == 42) || ((pin) == 43) || ((pin) == 44) || ((pin) == 45) || ((pin) == 46) || ((pin) == 47) ) //Forbidden pins like USB
+  #define pinIsReserved(pin)  ( ((pin) == 0) || ((pin) == 42) || ((pin) == 43) || ((pin) == 44) || ((pin) == 45) || ((pin) == 46) || ((pin) == 47) || pinIsSerial((pin)) ) //Forbidden pins like USB
 
 
 /*
@@ -120,17 +118,39 @@
   static inline void IGN7_TIMER_DISABLE(void)  {TMR4_CSCTRL2 &= ~TMR_CSCTRL_TCF1EN;}
   static inline void IGN8_TIMER_DISABLE(void)  {TMR4_CSCTRL3 &= ~TMR_CSCTRL_TCF1EN;}
 
-  //Bus Clock is 150Mhz @ 600 Mhz CPU. Need to handle this dynamically in the future for other frequencies
+  // Need to handle this dynamically in the future for other frequencies
   //#define TMR_PRESCALE  128
-  //#define MAX_TIMER_PERIOD ((65535 * 1000000ULL) / (F_BUS_ACTUAL / TMR_PRESCALE)) //55923 @ 600Mhz. 
-  #define MAX_TIMER_PERIOD 55923UL
-  #define uS_TO_TIMER_COMPARE(uS) ((uS * 75UL) >> 6) //Converts a given number of uS into the required number of timer ticks until that time has passed. 
+  //#define MAX_TIMER_PERIOD ((65535U * 1000000ULL) / (F_BUS_ACTUAL / TMR_PRESCALE)) //55923 @ 600Mhz. 
+  #if F_CPU == 600000000  
+    //Bus Clock is 150Mhz @ 600 Mhz CPU.
+    #define MAX_TIMER_PERIOD 55923UL //Time per tick = 0.8533333
+    #define uS_TO_TIMER_COMPARE(uS) ((uS * 75UL) >> 6) //Converts a given number of uS into the required number of timer ticks until that time has passed. 
+  #elif F_CPU == 528000000
+    //Bus Clock is 132Mhz @ 528 Mhz CPU.
+    #define MAX_TIMER_PERIOD 63549UL //Time per tick = 0.96969696
+    #define uS_TO_TIMER_COMPARE(uS) ((uS * 66UL) >> 6) //Converts a given number of uS into the required number of timer ticks until that time has passed. 
+  #elif F_CPU == 450000000
+    //Bus Clock is 150Mhz @ 450 Mhz CPU.
+    #define MAX_TIMER_PERIOD 55923UL //Time per tick = 0.8533333
+    #define uS_TO_TIMER_COMPARE(uS) ((uS * 75UL) >> 6) //Converts a given number of uS into the required number of timer ticks until that time has passed. 
+  #elif F_CPU == 396000000
+    //Bus Clock is 132Mhz @ 396 Mhz CPU.
+    #define MAX_TIMER_PERIOD 63549UL //Time per tick = 0.96969696
+    #define uS_TO_TIMER_COMPARE(uS) ((uS * 66UL) >> 6) //Converts a given number of uS into the required number of timer ticks until that time has passed. 
+  #elif F_CPU == 150000000
+    //Bus Clock is 75Mhz @ 150 Mhz CPU.
+    #define MAX_TIMER_PERIOD 111846UL //Time per tick = 1.706666
+    #define uS_TO_TIMER_COMPARE(uS) ((uS * 75UL) >> 7) //Converts a given number of uS into the required number of timer ticks until that time has passed. 
+  #else
+    #error Unsupported CPU frequency. 
+  #endif
   /*
   To calculate the above uS_TO_TIMER_COMPARE
   Choose number of bit of precision. Eg: 6
   Divide 2^6 by the time per tick (0.853333) = 75
   Multiply and bitshift back by the precision: (uS * 75) >> 6
   */
+
 
 /*
 ***********************************************************************************************************
@@ -169,8 +189,6 @@
 ***********************************************************************************************************
 * CAN / Second serial
 */
-  #define USE_SERIAL3
-  #define secondarySerial_AVAILABLE
   #define SECONDARY_SERIAL_T HardwareSerial
   
   #include <FlexCAN_T4.h>

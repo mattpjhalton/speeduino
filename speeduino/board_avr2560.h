@@ -11,10 +11,7 @@
 ***********************************************************************************************************
 * General
 */
-  #define PORT_TYPE uint8_t //Size of the port variables (Eg inj1_pin_port).
-  #define PINMASK_TYPE uint8_t
   #define COMPARE_TYPE uint16_t
-  #define COUNTER_TYPE uint16_t
   #define SERIAL_BUFFER_SIZE (256+7+1) //Size of the serial buffer used by new comms protocol. The largest single packet is the O2 calibration which is 256 bytes + 7 bytes of overhead
   #define FPU_MAX_SIZE 0 //Size of the FPU buffer. 0 means no FPU.
   #ifdef USE_SPI_EEPROM
@@ -33,20 +30,9 @@
   uint16_t freeRam(void);
   void doSystemReset(void);
   void jumpToBootloader(void);
+  uint8_t getSystemTemp();
 
-  #if defined(TIMER5_MICROS)
-    /*#define micros() (((timer5_overflow_count << 16) + TCNT5) * 4) */ //Fast version of micros() that uses the 4uS tick of timer5. See timers.ino for the overflow ISR of timer5
-    #define millis() (ms_counter) //Replaces the standard millis() function with this macro. It is both faster and more accurate. See timers.ino for its counter increment.
-    static inline unsigned long micros_safe(); //A version of micros() that is interrupt safe
-  #else
-    #define micros_safe() micros() //If the timer5 method is not used, the micros_safe() macro is simply an alias for the normal micros()
-  #endif
   #define pinIsReserved(pin)  ( ((pin) == 0) ) //Forbidden pins like USB on other boards
-
-  //Mega 2561 MCU does not have a serial3 available. 
-  #if not defined(__AVR_ATmega2561__)
-    #define USE_SERIAL3
-  #endif
 
 /*
 ***********************************************************************************************************
@@ -158,9 +144,6 @@ static inline void IGN8_TIMER_DISABLE(void) { TIMSK3 &= ~(1 << OCIE3B); } //Repl
 ***********************************************************************************************************
 * CAN / Second serial
 */
-#if ( defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) )
-  #define secondarySerial_AVAILABLE
-#endif
 #define SECONDARY_SERIAL_T HardwareSerial
 
 #endif //CORE_AVR
