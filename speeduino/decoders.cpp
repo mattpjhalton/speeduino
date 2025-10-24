@@ -761,7 +761,7 @@ void triggerSec_missingTooth(void)
         }
         else if (secondaryToothCount == 2) // Doing this at explicit tooth to reduce risk of missing tooth 1
         {
-          triggerSecFilterTime = curGap2 << 2; //previous gap was 20 deg, next is 170. Multiply by 4 to get the nearest, conservation to not miss tooth 1
+          triggerSecFilterTime = curGap2 << 1; //previous gap was 20 deg, next is 170. Originally multiply by 4 to get the nearest, now super conservative to not miss tooth 1
         }
         else
         {
